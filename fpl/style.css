@@ -1,0 +1,138 @@
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  /* Navbar */
+  .navbar-brand {
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+  
+  .navbar-nav .nav-link {
+    margin-left: 15px;
+    transition: color 0.3s ease;
+  }
+  
+  .navbar-nav .nav-link:hover {
+    color: #28a745 !important;
+  }
+  
+  /* Hero Section */
+  .hero {
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                url('https://via.placeholder.com/1200x500?text=Fantasy+Premier+League') no-repeat center center/cover;
+    color: white;
+    padding: 100px 0;
+    text-align: center;
+  }
+  
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: bold;
+  }
+  
+  .hero .form-control {
+    border-radius: 30px;
+  }
+  
+  .hero .btn {
+    border-radius: 30px;
+    padding: 10px 30px;
+  }
+  
+  /* Cards */
+  .card {
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+  
+  /* Players Table */
+  .table th {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+  }
+  
+  /* Fixtures */
+  .card img {
+    border: 2px solid #28a745;
+    padding: 5px;
+    background: white;
+  }
+  
+  /* Buttons */
+  .btn-success {
+    background-color: #28a745;
+    border: none;
+  }
+  
+  .btn-success:hover {
+    background-color: #218838;
+  }
+  
+  .pitch {
+    background: url('https://i.ibb.co/5TPc1G7/football-pitch.png') no-repeat center center;
+    background-size: cover;
+    padding: 30px 10px;
+    border-radius: 15px;
+    min-height: 600px;
+    color: white;
+  }
+  .player-card {
+    background: rgba(0,0,0,0.6);
+    border-radius: 10px;
+    padding: 5px;
+    margin: 5px;
+    font-size: 0.9rem;
+  }
+  .row-position {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+
+  /* Player cards */
+.player-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 8px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+.player-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+}
+
+/* Navbar */
+.navbar {
+  background: linear-gradient(90deg, #004d00, #008000);
+}
+
+  
+  
+  /* Footer */
+  footer {
+    font-size: 0.9rem;
+  }
+  
+  footer a {
+    text-decoration: none;
+  }
+  
+  footer a:hover {
+    text-decoration: underline;
+  }
+  

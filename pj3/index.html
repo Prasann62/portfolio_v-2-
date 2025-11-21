@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FPL Analyzer — Live Dashboard</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--accent:#0d6efd}
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial; background: linear-gradient(180deg,#0f172a 0%, #071029 60%); color:#e6eef8}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.04)}
+    .team-badge{width:42px;height:42px;border-radius:8px;object-fit:cover}
+    .hero{padding:3.5rem 0}
+    .muted{color:rgba(230,238,248,0.68)}
+    .accent{color:var(--accent)}
+    .chip{background:rgba(255,255,255,0.03); padding:0.25rem 0.6rem; border-radius:999px; font-size:0.8rem}
+    .search-input{background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); color:inherit}
+    footer{padding:1.5rem 0; color:#9fb3d6}
+    @media (max-width:575px){ .hero{padding:2rem 0} }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-transparent px-3">
+    <a class="navbar-brand d-flex align-items-center" href="#">
+      <img src="https://fantasy.premierleague.com/static/img/fpl-shield.svg" alt="logo" width="40" height="40" class="me-2">
+      <div>
+        <div class="fw-bold">FPL Analyzer</div>
+        <div class="small muted">Live Insights • Teams • Picks</div>
+      </div>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navmenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navmenu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="#best-teams">Best Teams</a></li>
+        <li class="nav-item"><a class="nav-link" href="#stats">Players</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="container hero text-start">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <h1 class="display-5">Live Fantasy Premier League Data</h1>
+        <p class="lead muted">Pulled directly from the <a href="https://fantasy.premierleague.com/" target="_blank" class="accent">official FPL API</a>.</p>
+      </div>
+      <div class="col-lg-5 text-center mt-4 mt-lg-0">
+        <div class="card p-3 shadow-sm">
+          <canvas id="pointsChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container my-4">
+    <section id="best-teams" class="mb-5">
+      <h3>Top Players (EP)</h3>
+      <div class="row g-3" id="teamsGrid"></div>
+    </section>
+
+    <section id="stats" class="mb-5">
+      <h3>All Players Snapshot</h3>
+      <div class="card p-3">
+        <div class="table-responsive">
+          <table class="table table-dark table-striped" id="playersTable">
+            <thead>
+              <tr><th>Player</th><th>Team</th><th>Position</th><th>EP</th><th>Price</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center">
+    <div class="container">
+      <div>Made for FPL projects • Live API integration</div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const teamsGrid = document.getElementById('teamsGrid');
+    const playersTable = document.querySelector('#playersTable tbody');
+
+    async function loadData(){
+      try {
+        const res = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/");
+        const data = await res.json();
+
+        const teams = data.teams;
+        const elements = data.elements;
+
+        // --- Top 6 players by EP ---
+        const topPlayers = [...elements]
+          .sort((a,b)=> parseFloat(b.ep_next) - parseFloat(a.ep_next))
+          .slice(0,6);
+
+        teamsGrid.innerHTML = '';
+        topPlayers.forEach(p=>{
+          const teamName = teams[p.team-1].name;
+          const pos = ["GK","DEF","MID","FWD"][p.element_type-1];
+          const col = document.createElement('div');
+          col.className = 'col-sm-6 col-md-4';
+          col.innerHTML = `
+            <div class="card p-3 h-100">
+              <div class="fw-bold fs-5">${p.web_name}</div>
+              <div class="muted small">${teamName} • ${pos}</div>
+              <div class="mt-2">EP Next: <span class="fw-bold">${p.ep_next}</span></div>
+              <div>Price: £${(p.now_cost/10).toFixed(1)}</div>
+            </div>`;
+          teamsGrid.appendChild(col);
+        });
+
+        // --- Player Table (first 30 for demo) ---
+        playersTable.innerHTML = '';
+        elements.slice(0,30).forEach(p=>{
+          const teamName = teams[p.team-1].name;
+          const pos = ["GK","DEF","MID","FWD"][p.element_type-1];
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${p.web_name}</td><td>${teamName}</td><td>${pos}</td><td>${p.ep_next}</td><td>£${(p.now_cost/10).toFixed(1)}</td>`;
+          playersTable.appendChild(tr);
+        });
+
+        drawPointsTrend(elements);
+      } catch(e){
+        console.error(e);
+        teamsGrid.innerHTML = '<p class="text-danger">Failed to load data. Try again later.</p>';
+      }
+    }
+
+    function drawPointsTrend(elements){
+      const ctx = document.getElementById('pointsChart').getContext('2d');
+      const avgPoints = [
+        elements.slice(0,50).reduce((s,p)=>s+parseFloat(p.ep_next),0)/50,
+        elements.slice(50,100).reduce((s,p)=>s+parseFloat(p.ep_next),0)/50,
+        elements.slice(100,150).reduce((s,p)=>s+parseFloat(p.ep_next),0)/50
+      ];
+      new Chart(ctx, {
+        type:'line',
+        data:{labels:['Top 50','51-100','101-150'], datasets:[{label:'Avg EP', data:avgPoints, tension:0.3}]},
+        options:{plugins:{legend:{display:false}}}
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

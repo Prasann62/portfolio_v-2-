@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FPL League Table</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <h2 class="text-center mb-4">League Table</h2>
+
+  <div class="d-flex mb-3">
+    <input type="number" id="gwInput" class="form-control w-25 me-2" placeholder="Gameweek #" value="1">
+    <button class="btn btn-primary" onclick="loadLeague()">Load GW</button>
+  </div>
+
+  <table class="table table-bordered text-center">
+    <thead class="table-dark">
+      <tr>
+        <th>Rank</th>
+        <th>User</th>
+        <th>Points</th>
+      </tr>
+    </thead>
+    <tbody id="leagueTable"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadLeague() {
+  const gw = document.getElementById("gwInput").value || 1;
+  const res = await fetch("getLeague.php?gw=" + gw);
+  const data = await res.json();
+
+  const tbody = document.getElementById("leagueTable");
+  tbody.innerHTML = "";
+
+  data.forEach((row, idx) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${row.name}</td>
+        <td>${row.points}</td>
+      </tr>
+    `;
+  });
+}
+
+loadLeague();
+</script>
+</body>
+</html>

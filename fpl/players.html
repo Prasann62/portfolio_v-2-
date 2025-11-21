@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FPL - Players</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-success" href="index.html">FPL Champ</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link active" href="players.html">Players</a></li>
+          <li class="nav-item"><a class="nav-link" href="fixtures.html">Fixtures</a></li>
+          <li class="nav-item"><a class="nav-link" href="login.php">Login</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Player Filters -->
+  <div class="container mt-4">
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <input type="text" id="searchBox" class="form-control" placeholder="Search player by name...">
+      </div>
+      <div class="col-md-4">
+        <select id="positionFilter" class="form-select">
+          <option value="">All Positions</option>
+          <option value="1">Goalkeeper</option>
+          <option value="2">Defender</option>
+          <option value="3">Midfielder</option>
+          <option value="4">Forward</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select id="teamFilter" class="form-select">
+          <option value="">All Teams</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Stats Section -->
+  <section class="container py-5">
+    <h2 class="text-center mb-4">Player Statistics</h2>
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered text-center align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Price</th>
+            <th>Form</th>
+            <th>Points</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic Player Data Will Load Here -->
+        </tbody>
+      </table>
+    </div>
+    
+    <hr class="my-5">
+    <h2 class="text-center mb-4">Compare Players</h2>
+
+    <div class="row mb-3">
+      <div class="col-md-5">
+        <select id="player1" class="form-select"></select>
+      </div>
+      <div class="col-md-5">
+        <select id="player2" class="form-select"></select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-success w-100" onclick="comparePlayers()">Compare</button>
+      </div>
+    </div>
+
+    <div id="comparisonResult" class="row mt-4"></div>
+
+    <!-- Trend Chart -->
+    <div class="container my-5">
+      <h4 class="text-center">Points Trend</h4>
+      <canvas id="compareChart" height="120"></canvas>
+    </div>
+  </section>
+
+  <div class="container my-5">
+    <h4 class="text-center mb-4">Player Form Trend</h4>
+    <canvas id="playerTrendChart" height="120"></canvas>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white text-center py-3">
+    <p class="mb-0">&copy; 2025 FPL Champ. All rights reserved.</p>
+    <div>
+      <a href="#" class="text-success mx-2">Facebook</a> |
+      <a href="#" class="text-success mx-2">Twitter</a> |
+      <a href="#" class="text-success mx-2">Instagram</a>
+    </div>
+  </footer>
+
+  <!-- Bootstrap & JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Fetch Live Player Data -->
+  <script>
+    // Global variables
+    let allPlayers = [];
+    let teams = {};
+    let playerChart = null;
+    let compareChart = null;
+
+    // Position mapping
+    const positions = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"};
+
+    // Load players data
+    async function loadPlayers() {
+      try {
+        const res = await fetch("getPlayers.php");
+        const data = await res.json();
+
+        allPlayers = data.elements;
+        teams = {};
+        data.teams.forEach(t => teams[t.id] = t.name);
+
+        // Populate team filter
+        const teamFilter = document.getElementById("teamFilter");
+        teamFilter.innerHTML = '<option value="">All Teams</option>';
+        data.teams.forEach(t => {
+          let opt = document.createElement("option");
+          opt.value = t.id;
+          opt.textContent = t.name;
+          teamFilter.appendChild(opt);
+        });
+
+        renderPlayers(allPlayers.slice(0, 50)); // show first 50
+        populateCompareDropdowns();
+      } catch (err) {
+        console.error("Error loading players:", err);
+      }
+    }
+
+    // Render players to table
+    function renderPlayers(players) {
+      let tbody = document.querySelector("tbody");
+      tbody.innerHTML = "";
+
+      players.forEach(p => {
+        let pos = positions[p.element_type];
+        let status = "";
+        if (p.status === "i") status = `<span class="badge bg-danger">Injured</span><br><small>${p.news || ''}</small>`;
+        else if (p.status === "d") status = `<span class="badge bg-warning text-dark">Doubtful</span><br><small>${p.news || ''}</small>`;
+        else if (p.status === "s") status = `<span class="badge bg-secondary">Suspended</span><br><small>${p.news || ''}</small>`;
+        else status = `<span class="badge bg-success">Fit</span>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.web_name}</td>
+            <td>${pos}</td>
+            <td>£${(p.now_cost/10).toFixed(1)}m</td>
+            <td>${p.form}</td>
+            <td>${p.total_points}</td>
+            <td>${status}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // Filter function
+    function applyFilters() {
+      const search = document.getElementById("searchBox").value.toLowerCase();
+      const pos = document.getElementById("positionFilter").value;
+      const team = document.getElementById("teamFilter").value;
+
+      let filtered = allPlayers.filter(p => {
+        const matchesSearch = p.web_name.toLowerCase().includes(search);
+        const matchesPos = pos ? p.element_type == pos : true;
+        const matchesTeam = team ? p.team == team : true;
+        return matchesSearch && matchesPos && matchesTeam;
+      });
+
+      renderPlayers(filtered.slice(0, 50)); // limit to 50 for speed
+    }
+
+    // Populate comparison dropdowns
+    function populateCompareDropdowns() {
+      const select1 = document.getElementById("player1");
+      const select2 = document.getElementById("player2");
+      
+      select1.innerHTML = '';
+      select2.innerHTML = '';
+
+      allPlayers.forEach(p => {
+        const opt1 = document.createElement("option");
+        opt1.value = p.id;
+        opt1.textContent = p.web_name + " (£" + (p.now_cost/10).toFixed(1) + "m)";
+        select1.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = p.id;
+        opt2.textContent = p.web_name + " (£" + (p.now_cost/10).toFixed(1) + "m)";
+        select2.appendChild(opt2);
+      });
+    }
+
+    // Load player trend data
+    async function loadPlayerTrend(playerId) {
+      try {
+        // Use proxy to avoid CORS issues
+        const res = await fetch(`getPlayerHistory.php?playerId=${playerId}`);
+        const data = await res.json();
+
+        const gw = data.history.map(h => "GW " + h.round);
+        const points = data.history.map(h => h.total_points);
+
+        // Destroy previous chart if exists
+        if (playerChart) {
+          playerChart.destroy();
+        }
+
+        const ctx = document.getElementById("playerTrendChart").getContext("2d");
+        playerChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: gw,
+            datasets: [{
+              label: "Points per GW",
+              data: points,
+              borderColor: "green",
+              backgroundColor: "rgba(0,128,0,0.1)",
+              fill: true,
+              tension: 0.3
+            }]
+          },
+          options: { responsive: true }
+        });
+      } catch (err) {
+        console.error("Error loading player trend:", err);
+      }
+    }
+
+    // Compare players function
+    async function comparePlayers() {
+      const id1 = document.getElementById("player1").value;
+      const id2 = document.getElementById("player2").value;
+
+      if (!id1 || !id2 || id1 === id2) {
+        alert("Please select two different players");
+        return;
+      }
+
+      try {
+        const [res1, res2] = await Promise.all([
+          fetch(`getPlayerHistory.php?playerId=${id1}`),
+          fetch(`getPlayerHistory.php?playerId=${id2}`)
+        ]);
+
+        const data1 = await res1.json();
+        const data2 = await res2.json();
+
+        const p1 = allPlayers.find(p => p.id == id1);
+        const p2 = allPlayers.find(p => p.id == id2);
+
+        // Comparison card
+        const result = document.getElementById("comparisonResult");
+        result.innerHTML = `
+          <div class="col-md-6">
+            <div class="card p-3 shadow-sm">
+              <h5>${p1.web_name}</h5>
+              <p>Position: ${positions[p1.element_type]}</p>
+              <p>Team: ${teams[p1.team]}</p>
+              <p>Price: £${(p1.now_cost/10).toFixed(1)}m</p>
+              <p>Form: ${p1.form}</p>
+              <p>Total Points: ${p1.total_points}</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card p-3 shadow-sm">
+              <h5>${p2.web_name}</h5>
+              <p>Position: ${positions[p2.element_type]}</p>
+              <p>Team: ${teams[p2.team]}</p>
+              <p>Price: £${(p2.now_cost/10).toFixed(1)}m</p>
+              <p>Form: ${p2.form}</p>
+              <p>Total Points: ${p2.total_points}</p>
+            </div>
+          </div>
+        `;
+
+        // Trend chart
+        const gw = data1.history.map(h => "GW " + h.round);
+        const points1 = data1.history.map(h => h.total_points);
+        const points2 = data2.history.map(h => h.total_points);
+
+        // Destroy previous chart if exists
+        if (compareChart) {
+          compareChart.destroy();
+        }
+
+        const ctx = document.getElementById("compareChart").getContext("2d");
+        compareChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: gw,
+            datasets: [
+              { label: p1.web_name, data: points1, borderColor: "green", fill: false },
+              { label: p2.web_name, data: points2, borderColor: "red", fill: false }
+            ]
+          },
+          options: { responsive: true }
+        });
+      } catch (err) {
+        console.error("Error comparing players:", err);
+        alert("Error comparing players. Please try again.");
+      }
+    }
+
+    // Event listeners
+    document.getElementById("searchBox").addEventListener("input", applyFilters);
+    document.getElementById("positionFilter").addEventListener("change", applyFilters);
+    document.getElementById("teamFilter").addEventListener("change", applyFilters);
+
+    // Load on page start
+    loadPlayers().then(() => {
+      // Load trend for a default player after data is loaded
+      if (allPlayers.length > 0) {
+        loadPlayerTrend(allPlayers[0].id);
+      }
+    });
+  </script>
+</body>
+</html>

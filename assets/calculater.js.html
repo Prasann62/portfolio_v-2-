@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simple Calculator</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f6f6f6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header,footer {
+      background: #8785a2;
+      color: white;
+      text-align: center;
+      padding: 15px 0;
+    }
+    
+         
+    .container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .calculator {
+      width: 320px;
+      background: linear-gradient(135deg,#154d71,#33a1e0);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+      color: white;
+    }
+    .display {
+      margin-bottom: 20px;
+    }
+    .display input {
+      width: 280px;
+      padding: 18px;
+      font-size: 24px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      background: #fff;
+      color: #000;
+      text-align: right;
+      font-weight: bold;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    button {
+      padding: 15px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    .span-2 {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simple Calculator</h1>
+  </header>
+  <div class="container">
+    <div class="calculator">
+      <div class="display">
+        <input type="text" id="result" readonly placeholder="0" value="0" />
+      </div>
+      <div class="buttons">
+        <button onclick="appendValue('7')">7</button>
+        <button onclick="appendValue('8')">8</button>
+        <button onclick="appendValue('9')">9</button>
+        <button onclick="appendValue('/')">÷</button>
+
+        <button onclick="appendValue('4')">4</button>
+        <button onclick="appendValue('5')">5</button>
+        <button onclick="appendValue('6')">6</button>
+        <button onclick="appendValue('*')">×</button>
+
+        <button onclick="appendValue('1')">1</button>
+        <button onclick="appendValue('2')">2</button>
+        <button onclick="appendValue('3')">3</button>
+        <button onclick="appendValue('-')">−</button>
+
+        <button onclick="appendValue('0')">0</button>
+        <button onclick="appendValue('.')">.</button>
+        <button onclick="calculate()">=</button>
+        <button onclick="appendValue('+')">+</button>
+
+        <button class="span-2" onclick="clearResult()">C</button>
+        <button class="span-2" onclick="deleteLast()">⌫</button>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <p>© 2025 My Calculator Website</p>
+  </footer>
+
+  <script>
+    const operators = ['+', '-', '*', '/'];
+
+    function appendValue(val) {
+      let result = document.getElementById('result');
+      let current = result.value;
+
+      // Replace initial 0 or error on first input
+      if (current === '0' || current === 'Error') {
+        if (val === '.') {
+          // If starting with '.', prepend 0
+          result.value = '0.';
+          return;
+        }
+        result.value = val;
+        return;
+      }
+
+      let lastChar = current.slice(-1);
+
+      // Prevent two consecutive operators
+      if (operators.includes(val)) {
+        if (operators.includes(lastChar)) {
+          // Replace last operator with new one
+          result.value = current.slice(0, -1) + val;
+          return;
+        }
+      }
+
+      // Prevent multiple decimals in the current number
+      if (val === '.') {
+        // Find the last number segment
+        let parts = current.split(/[\+\-\*\/]/);
+        let lastNumber = parts[parts.length - 1];
+        if (lastNumber.includes('.')) {
+          return; // Ignore if decimal already present in the current number
+        }
+      }
+
+      result.value += val;
+    }
+
+    function clearResult() {
+      document.getElementById('result').value = '0';
+    }
+
+    function deleteLast() {
+      let res = document.getElementById('result').value;
+      if (res.length <= 1 || res === 'Error') {
+        document.getElementById('result').value = '0';
+      } else {
+        document.getElementById('result').value = res.slice(0, -1);
+      }
+    }
+
+    function calculate() {
+      let expression = document.getElementById('result').value;
+
+      // Remove trailing operator if any
+      while (expression.length > 0 && operators.includes(expression.slice(-1))) {
+        expression = expression.slice(0, -1);
+      }
+
+      try {
+        // Use Function constructor to safely evaluate expression
+        let result = Function('"use strict";return (' + expression + ')')();
+        if (result === Infinity || result === -Infinity || isNaN(result)) {
+          throw new Error('Math error');
+        }
+        document.getElementById('result').value = result;
+      } catch {
+        document.getElementById('result').value = 'Error';
+      }
+    }
+  </script>
+</body>
+</html>

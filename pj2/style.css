@@ -1,0 +1,31 @@
+body {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    font-family: 'Arial', sans-serif;
+    color: #333;
+  }
+  
+  .card {
+    border-radius: 12px;
+  }
+  
+  h2, h3 {
+    color: #333;
+  }
+  
+  .btn-primary {
+    background: #2575fc;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background: #6a11cb;
+  }
+  
+  .btn-success {
+    background: #28a745;
+  }
+  
+  .btn-success:hover {
+    background: #218838;
+  }
+  
